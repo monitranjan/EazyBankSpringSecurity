@@ -14,7 +14,18 @@ public class ProjectSecurityConfig {
 
     @Bean
     SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
-        http.authorizeHttpRequests((requests) -> requests.anyRequest().permitAll());
+
+        /*
+        Below two lines are two ends either allow all request to pass through or deny All request either
+        authenticated or not. Now we need sweet spot for our use case.
+               http.authorizeHttpRequests((requests) -> requests.anyRequest().permitAll());
+               http.authorizeHttpRequests((requests) -> requests.anyRequest().denyAll());
+         */
+        http.authorizeHttpRequests((requests) -> requests
+                .requestMatchers("/myAccount", "/myBalance","/myCards","/myLoans")
+                .authenticated()
+                .requestMatchers("/notices","/contact","/error").permitAll()
+        );
         http.formLogin(withDefaults());
         http.httpBasic(withDefaults());
         return http.build();
