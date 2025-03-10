@@ -4,14 +4,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.password.CompromisedPasswordChecker;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.password.HaveIBeenPwnedRestApiPasswordChecker;
-
-import javax.sql.DataSource;
 
 import static org.springframework.security.config.Customizer.withDefaults;
 
@@ -27,26 +23,28 @@ public class ProjectSecurityConfig {
                http.authorizeHttpRequests((requests) -> requests.anyRequest().permitAll());
                http.authorizeHttpRequests((requests) -> requests.anyRequest().denyAll());
          */
-        http.authorizeHttpRequests((requests) -> requests
+        http.csrf(csrf->csrf.disable())
+                .authorizeHttpRequests((requests) -> requests
                 .requestMatchers("/myAccount", "/myBalance","/myCards","/myLoans")
                 .authenticated()
-                .requestMatchers("/notices","/contact","/error").permitAll()
+                .requestMatchers("/notices","/contact","/error","/register").permitAll()
         );
         http.formLogin(withDefaults());
         http.httpBasic(withDefaults());
         return http.build();
     }
 
-    @Bean
-    public UserDetailsService userDetailsService(DataSource dataSource) {
+// Commenting as we have created our own customUserDetailsService implementation
+//    @Bean
+//    public UserDetailsService userDetailsService(DataSource dataSource) {
         /*
         UserDetails user = User.withUsername("user").password("{noop}bcrypt@12345").authorities("read").build();
         UserDetails admin = User.withUsername("admin").password("{bcrypt}$2a$12$g./CFwfixaPjcrXuN3nRDOCNmhbyDGfHLGzfgjzEc6F4z.Aa8CLam").authorities("admin").build();
         return new InMemoryUserDetailsManager(user, admin);
          */
 //        now converting with mysql
-        return new JdbcUserDetailsManager(dataSource);
-    }
+//        return new JdbcUserDetailsManager(dataSource);
+//    }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
