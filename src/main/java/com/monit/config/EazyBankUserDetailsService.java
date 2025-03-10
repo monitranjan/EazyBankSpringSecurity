@@ -3,6 +3,7 @@ package com.monit.config;
 import com.monit.model.Customer;
 import com.monit.repository.CustomerRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Profile;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 @Service
+@Profile("!prod")
 @RequiredArgsConstructor // for single field we don't need @Autowired also method injection will be handled by this annotation
 public class EazyBankUserDetailsService implements UserDetailsService {
 
