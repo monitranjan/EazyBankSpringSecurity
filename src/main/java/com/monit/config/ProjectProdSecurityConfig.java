@@ -31,7 +31,7 @@ public class ProjectProdSecurityConfig {
     SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
         http.sessionManagement(smc->smc.invalidSessionUrl("/invalidSession")
                         .maximumSessions(2).maxSessionsPreventsLogin(true).expiredUrl("/expiredSession"))
-                .requiresChannel(rcc -> rcc.anyRequest().requiresSecure())
+//                .requiresChannel(rcc -> rcc.anyRequest().requiresSecure())
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests((requests) -> requests
                         .requestMatchers("/myAccount", "/myBalance", "/myCards", "/myLoans")

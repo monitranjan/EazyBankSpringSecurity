@@ -11,7 +11,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 @Component
-@Profile(value = "prod")
+@Profile("prod")
 @RequiredArgsConstructor
 public class EazyBankProdUserNamePwdAuthenticationProvider implements AuthenticationProvider {
 
