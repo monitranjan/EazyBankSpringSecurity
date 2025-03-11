@@ -27,7 +27,8 @@ public class ProjectSecurityConfig {
                http.authorizeHttpRequests((requests) -> requests.anyRequest().permitAll());
                http.authorizeHttpRequests((requests) -> requests.anyRequest().denyAll());
          */
-        http.requiresChannel(rcc->rcc.anyRequest().requiresInsecure())    //only http are allowed
+        http.sessionManagement(smc->smc.invalidSessionUrl("/invalidSession").maximumSessions(5))
+                .requiresChannel(rcc->rcc.anyRequest().requiresInsecure())    //only http are allowed
                 .csrf(csrf->csrf.disable())
                 .authorizeHttpRequests((requests) -> requests
                 .requestMatchers("/myAccount", "/myBalance","/myCards","/myLoans")
