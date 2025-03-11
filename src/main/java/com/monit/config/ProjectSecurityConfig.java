@@ -1,5 +1,6 @@
 package com.monit.config;
 
+import com.monit.exceptionHandling.CustomBasicAuthenticationEntryPoint;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -25,14 +26,15 @@ public class ProjectSecurityConfig {
                http.authorizeHttpRequests((requests) -> requests.anyRequest().permitAll());
                http.authorizeHttpRequests((requests) -> requests.anyRequest().denyAll());
          */
-        http.csrf(csrf->csrf.disable())
+        http.requiresChannel(rcc->rcc.anyRequest().requiresInsecure())    //only http are allowed
+                .csrf(csrf->csrf.disable())
                 .authorizeHttpRequests((requests) -> requests
                 .requestMatchers("/myAccount", "/myBalance","/myCards","/myLoans")
                 .authenticated()
                 .requestMatchers("/notices","/contact","/error","/register").permitAll()
         );
         http.formLogin(withDefaults());
-        http.httpBasic(withDefaults());
+        http.httpBasic(hbc->hbc.authenticationEntryPoint(new CustomBasicAuthenticationEntryPoint()));
         return http.build();
     }
 
