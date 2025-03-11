@@ -2,16 +2,21 @@ package com.monit.config;
 
 import com.monit.exceptionHandling.CustomAccessDeniedHandler;
 import com.monit.exceptionHandling.CustomBasicAuthenticationEntryPoint;
+import com.monit.filter.CsrfCookieFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.authentication.password.CompromisedPasswordChecker;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.password.HaveIBeenPwnedRestApiPasswordChecker;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 
@@ -34,7 +39,11 @@ public class ProjectProdSecurityConfig {
 
     @Bean
     SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
-        http.cors(corsConfig->corsConfig.configurationSource(new CorsConfigurationSource() {
+        CsrfTokenRequestAttributeHandler csrfTokenRequestAttributeHandler = new CsrfTokenRequestAttributeHandler();
+
+        http.securityContext(securityContext -> securityContext.requireExplicitSave(false))
+                .sessionManagement(sessionManagement -> sessionManagement.sessionCreationPolicy(SessionCreationPolicy.ALWAYS))
+                .cors(corsConfig->corsConfig.configurationSource(new CorsConfigurationSource() {
                     @Override
                     public CorsConfiguration getCorsConfiguration(HttpServletRequest request) {
                         CorsConfiguration corsConfiguration = new CorsConfiguration();
@@ -50,9 +59,11 @@ public class ProjectProdSecurityConfig {
                 .sessionManagement(smc->smc.invalidSessionUrl("/invalidSession")
                         .maximumSessions(2).maxSessionsPreventsLogin(true).expiredUrl("/expiredSession"))
                 .requiresChannel(rcc -> rcc.anyRequest().requiresSecure())
-                .csrf(csrf -> csrf.disable())
+                .csrf(csrfConfig->csrfConfig.csrfTokenRequestHandler(csrfTokenRequestAttributeHandler)
+                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
+                .addFilterAfter(new CsrfCookieFilter(), BasicAuthenticationFilter.class)
                 .authorizeHttpRequests((requests) -> requests
-                        .requestMatchers("/myAccount", "/myBalance", "/myCards", "/myLoans")
+                        .requestMatchers("/myAccount", "/myBalance", "/myCards", "/myLoans","/user")
                         .authenticated()
                         .requestMatchers("/notices", "/contact", "/error", "/register", "/invalidSession").permitAll()
                 );
@@ -61,18 +72,6 @@ public class ProjectProdSecurityConfig {
         http.exceptionHandling(ehc->ehc.accessDeniedHandler(new CustomAccessDeniedHandler()));
         return http.build();
     }
-
-// Commenting as we have created our own customUserDetailsService implementation
-//    @Bean
-//    public UserDetailsService userDetailsService(DataSource dataSource) {
-        /*
-        UserDetails user = User.withUsername("user").password("{noop}bcrypt@12345").authorities("read").build();
-        UserDetails admin = User.withUsername("admin").password("{bcrypt}$2a$12$g./CFwfixaPjcrXuN3nRDOCNmhbyDGfHLGzfgjzEc6F4z.Aa8CLam").authorities("admin").build();
-        return new InMemoryUserDetailsManager(user, admin);
-         */
-//        now converting with mysql
-//        return new JdbcUserDetailsManager(dataSource);
-//    }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -83,4 +82,16 @@ public class ProjectProdSecurityConfig {
     public CompromisedPasswordChecker compromisedPasswordChecker() {
         return new HaveIBeenPwnedRestApiPasswordChecker();
     }
+
+    // Commenting as we have created our own customUserDetailsService implementation
+//    @Bean
+//    public UserDetailsService userDetailsService(DataSource dataSource) {
+        /*
+        UserDetails user = User.withUsername("user").password("{noop}bcrypt@12345").authorities("read").build();
+        UserDetails admin = User.withUsername("admin").password("{bcrypt}$2a$12$g./CFwfixaPjcrXuN3nRDOCNmhbyDGfHLGzfgjzEc6F4z.Aa8CLam").authorities("admin").build();
+        return new InMemoryUserDetailsManager(user, admin);
+         */
+//        now converting with mysql
+//        return new JdbcUserDetailsManager(dataSource);
+//    }
 }
