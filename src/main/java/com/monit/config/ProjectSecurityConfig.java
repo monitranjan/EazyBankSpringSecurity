@@ -57,12 +57,13 @@ public class ProjectSecurityConfig {
                 .sessionManagement(smc->smc.invalidSessionUrl("/invalidSession").maximumSessions(5))
                 .requiresChannel(rcc->rcc.anyRequest().requiresInsecure())    //only http are allowed
                 .csrf(csrfConfig->csrfConfig.csrfTokenRequestHandler(csrfTokenRequestAttributeHandler)
+                        .ignoringRequestMatchers("/contact","/register")
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
                 .addFilterAfter(new CsrfCookieFilter(), BasicAuthenticationFilter.class)
                 .authorizeHttpRequests((requests) -> requests
                 .requestMatchers("/myAccount", "/myBalance","/myCards","/myLoans","/user")
                 .authenticated()
-                .requestMatchers("/notices","/contact","/error","/register").permitAll()
+                .requestMatchers("/notices","/contact","/error","/register","/invalidSession").permitAll()
         );
         http.formLogin(withDefaults());
         http.httpBasic(hbc->hbc.authenticationEntryPoint(new CustomBasicAuthenticationEntryPoint()));

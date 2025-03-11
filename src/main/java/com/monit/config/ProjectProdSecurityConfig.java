@@ -60,6 +60,7 @@ public class ProjectProdSecurityConfig {
                         .maximumSessions(2).maxSessionsPreventsLogin(true).expiredUrl("/expiredSession"))
                 .requiresChannel(rcc -> rcc.anyRequest().requiresSecure())
                 .csrf(csrfConfig->csrfConfig.csrfTokenRequestHandler(csrfTokenRequestAttributeHandler)
+                        .ignoringRequestMatchers("/contact","/register")
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
                 .addFilterAfter(new CsrfCookieFilter(), BasicAuthenticationFilter.class)
                 .authorizeHttpRequests((requests) -> requests
