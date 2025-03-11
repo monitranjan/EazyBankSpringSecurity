@@ -2,6 +2,7 @@ package com.monit.config;
 
 import com.monit.exceptionHandling.CustomAccessDeniedHandler;
 import com.monit.exceptionHandling.CustomBasicAuthenticationEntryPoint;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -11,6 +12,11 @@ import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.password.HaveIBeenPwnedRestApiPasswordChecker;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+
+import java.util.Collection;
+import java.util.Collections;
 
 import static org.springframework.security.config.Customizer.withDefaults;
 
@@ -27,7 +33,20 @@ public class ProjectSecurityConfig {
                http.authorizeHttpRequests((requests) -> requests.anyRequest().permitAll());
                http.authorizeHttpRequests((requests) -> requests.anyRequest().denyAll());
          */
-        http.sessionManagement(smc->smc.invalidSessionUrl("/invalidSession").maximumSessions(5))
+        http.cors(corsConfig->corsConfig.configurationSource(new CorsConfigurationSource() {
+            @Override
+            public CorsConfiguration getCorsConfiguration(HttpServletRequest request) {
+                CorsConfiguration corsConfiguration = new CorsConfiguration();
+                corsConfiguration.setAllowedOrigins(Collections.singletonList("http://localhost:4200"));
+                corsConfiguration.setAllowedHeaders(Collections.singletonList("*"));
+                corsConfiguration.setAllowedMethods(Collections.singletonList("*"));
+                corsConfiguration.setAllowCredentials(true);
+                corsConfiguration.setAllowedHeaders(Collections.singletonList("*"));
+                corsConfiguration.setMaxAge(3600L);
+                return corsConfiguration;
+            }
+        }))
+                .sessionManagement(smc->smc.invalidSessionUrl("/invalidSession").maximumSessions(5))
                 .requiresChannel(rcc->rcc.anyRequest().requiresInsecure())    //only http are allowed
                 .csrf(csrf->csrf.disable())
                 .authorizeHttpRequests((requests) -> requests
