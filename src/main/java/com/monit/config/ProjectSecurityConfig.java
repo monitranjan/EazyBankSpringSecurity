@@ -3,6 +3,7 @@ package com.monit.config;
 import com.monit.exceptionHandling.CustomAccessDeniedHandler;
 import com.monit.exceptionHandling.CustomBasicAuthenticationEntryPoint;
 import com.monit.filter.CsrfCookieFilter;
+import com.monit.filter.RequestValidationBeforefilter;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -60,11 +61,12 @@ public class ProjectSecurityConfig {
                         .ignoringRequestMatchers("/contact", "/register")
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
                 .addFilterAfter(new CsrfCookieFilter(), BasicAuthenticationFilter.class)
+                .addFilterBefore(new RequestValidationBeforefilter(),BasicAuthenticationFilter.class)
                 .authorizeHttpRequests((requests) -> requests
                         /*.requestMatchers("/myAccount").hasAuthority("VIEWACCOUNT")
-                                .requestMatchers( "/myBalance").hasAnyAuthority("VIEWBALANCE","VIEWACCOUNT")
-                                .requestMatchers("/myLoans").hasAnyAuthority("VIEWLOANS")
-                                .requestMatchers("/myCards").hasAnyAuthority("VIEWCARDS") */
+                           .requestMatchers( "/myBalance").hasAnyAuthority("VIEWBALANCE","VIEWACCOUNT")
+                           .requestMatchers("/myLoans").hasAnyAuthority("VIEWLOANS")
+                           .requestMatchers("/myCards").hasAnyAuthority("VIEWCARDS") */
                         .requestMatchers("/myAccount").hasAuthority("USER")
                         .requestMatchers("/myBalance").hasAnyRole("USER", "ADMIN")
                         .requestMatchers("/myLoans").hasRole("USER")
