@@ -2,7 +2,7 @@ package com.monit.config;
 
 import com.monit.exceptionHandling.CustomAccessDeniedHandler;
 import com.monit.exceptionHandling.CustomBasicAuthenticationEntryPoint;
-import com.monit.filter.CsrfCookieFilter;
+import com.monit.filter.*;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -41,8 +41,7 @@ public class ProjectProdSecurityConfig {
     SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
         CsrfTokenRequestAttributeHandler csrfTokenRequestAttributeHandler = new CsrfTokenRequestAttributeHandler();
 
-        http.securityContext(securityContext -> securityContext.requireExplicitSave(false))
-                .sessionManagement(sessionManagement -> sessionManagement.sessionCreationPolicy(SessionCreationPolicy.ALWAYS))
+        http.sessionManagement(sessionManagement -> sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .cors(corsConfig -> corsConfig.configurationSource(new CorsConfigurationSource() {
                     @Override
                     public CorsConfiguration getCorsConfiguration(HttpServletRequest request) {
@@ -63,13 +62,18 @@ public class ProjectProdSecurityConfig {
                         .ignoringRequestMatchers("/contact", "/register")
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
                 .addFilterAfter(new CsrfCookieFilter(), BasicAuthenticationFilter.class)
+                .addFilterBefore(new RequestValidationBeforefilter(),BasicAuthenticationFilter.class)
+                .addFilterAfter(new AuthoritiesLoggingAfterFilter(),BasicAuthenticationFilter.class)
+                .addFilterAt(new AuthoritiesLoggingAtFilter(),BasicAuthenticationFilter.class)
+                .addFilterAfter(new JWTTokenGeneratorFilter(), BasicAuthenticationFilter.class)
+                .addFilterBefore(new JWTTokenValidatorFilter(), BasicAuthenticationFilter.class)
                 .authorizeHttpRequests((requests) -> requests
-                        .requestMatchers("/myAccount").hasAuthority("VIEWACCOUNT")
-                        .requestMatchers("/myBalance").hasAnyAuthority("VIEWBALANCE", "VIEWACCOUNT")
-                        .requestMatchers("/myLoans").hasAnyAuthority("VIEWLOANS")
-                        .requestMatchers("/myCards").hasAnyAuthority("VIEWCARDS")
+                        .requestMatchers("/myAccount").hasRole("USER")
+                        .requestMatchers("/myBalance").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers("/myLoans").hasRole("USER")
+                        .requestMatchers("/myCards").hasRole("USER")
                         .requestMatchers("/user").authenticated()
-                        .requestMatchers("/notices", "/contact", "/error", "/register", "/invalidSession").permitAll()
+                        .requestMatchers("/notices", "/contact", "/error", "/register", "/invalidSession", "/apiLogin").permitAll()
                 );
         http.formLogin(withDefaults());
         http.httpBasic(hbc -> hbc.authenticationEntryPoint(new CustomBasicAuthenticationEntryPoint()));

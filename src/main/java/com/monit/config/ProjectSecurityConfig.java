@@ -2,8 +2,7 @@ package com.monit.config;
 
 import com.monit.exceptionHandling.CustomAccessDeniedHandler;
 import com.monit.exceptionHandling.CustomBasicAuthenticationEntryPoint;
-import com.monit.filter.CsrfCookieFilter;
-import com.monit.filter.RequestValidationBeforefilter;
+import com.monit.filter.*;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,6 +20,7 @@ import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -40,34 +40,37 @@ public class ProjectSecurityConfig {
     SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
         CsrfTokenRequestAttributeHandler csrfTokenRequestAttributeHandler = new CsrfTokenRequestAttributeHandler();
 
-        http.securityContext(securityContext -> securityContext.requireExplicitSave(false))
-                .sessionManagement(sessionManagement -> sessionManagement.sessionCreationPolicy(SessionCreationPolicy.ALWAYS))
+        http.sessionManagement(sessionManagement -> sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .cors(corsConfig -> corsConfig.configurationSource(new CorsConfigurationSource() {
                     @Override
                     public CorsConfiguration getCorsConfiguration(HttpServletRequest request) {
                         CorsConfiguration corsConfiguration = new CorsConfiguration();
                         corsConfiguration.setAllowedOrigins(Collections.singletonList("http://localhost:4200"));
-                        corsConfiguration.setAllowedHeaders(Collections.singletonList("*"));
                         corsConfiguration.setAllowedMethods(Collections.singletonList("*"));
                         corsConfiguration.setAllowCredentials(true);
                         corsConfiguration.setAllowedHeaders(Collections.singletonList("*"));
+                        corsConfiguration.setExposedHeaders(Arrays.asList("Authorization"));
                         corsConfiguration.setMaxAge(3600L);
                         return corsConfiguration;
                     }
                 }))
-                .sessionManagement(smc -> smc.invalidSessionUrl("/invalidSession").maximumSessions(5))
-                .requiresChannel(rcc -> rcc.anyRequest().requiresInsecure())    //only http are allowed
                 .csrf(csrfConfig -> csrfConfig.csrfTokenRequestHandler(csrfTokenRequestAttributeHandler)
-                        .ignoringRequestMatchers("/contact", "/register")
+                        .ignoringRequestMatchers("/contact", "/register","apiLogin")
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
                 .addFilterAfter(new CsrfCookieFilter(), BasicAuthenticationFilter.class)
                 .addFilterBefore(new RequestValidationBeforefilter(),BasicAuthenticationFilter.class)
+                .addFilterAfter(new AuthoritiesLoggingAfterFilter(),BasicAuthenticationFilter.class)
+                .addFilterAt(new AuthoritiesLoggingAtFilter(),BasicAuthenticationFilter.class)
+                .addFilterAfter(new JWTTokenGeneratorFilter(), BasicAuthenticationFilter.class)
+                .addFilterBefore(new JWTTokenValidatorFilter(), BasicAuthenticationFilter.class)
+//                .sessionManagement(smc -> smc.invalidSessionUrl("/invalidSession").maximumSessions(5))
+                .requiresChannel(rcc -> rcc.anyRequest().requiresInsecure())    //only http are allowed
                 .authorizeHttpRequests((requests) -> requests
                         /*.requestMatchers("/myAccount").hasAuthority("VIEWACCOUNT")
                            .requestMatchers( "/myBalance").hasAnyAuthority("VIEWBALANCE","VIEWACCOUNT")
                            .requestMatchers("/myLoans").hasAnyAuthority("VIEWLOANS")
                            .requestMatchers("/myCards").hasAnyAuthority("VIEWCARDS") */
-                        .requestMatchers("/myAccount").hasAuthority("USER")
+                        .requestMatchers("/myAccount").hasRole("USER")
                         .requestMatchers("/myBalance").hasAnyRole("USER", "ADMIN")
                         .requestMatchers("/myLoans").hasRole("USER")
                         .requestMatchers("/myCards").hasRole("USER")
