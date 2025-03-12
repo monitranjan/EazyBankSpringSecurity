@@ -12,17 +12,20 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor // for single field we don't need @Autowired also method injection will be handled by this annotation
+@RequiredArgsConstructor
+// for single field we don't need @Autowired also method injection will be handled by this annotation
 public class EazyBankUserDetailsService implements UserDetailsService {
 
     private final CustomerRepository customerRepository;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        Customer customer =customerRepository.findByEmail(username).orElseThrow(()->new UsernameNotFoundException("User not found"));
-        List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(customer.getRole()));
-        return new User(customer.getEmail(), customer.getPwd(),authorities);
+        Customer customer = customerRepository.findByEmail(username).orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        List<GrantedAuthority> authorities = customer.getAuthorities().stream()
+                .map(authority -> new SimpleGrantedAuthority(authority.getName())).collect(Collectors.toList());
+        return new User(customer.getEmail(), customer.getPwd(), authorities);
     }
 }

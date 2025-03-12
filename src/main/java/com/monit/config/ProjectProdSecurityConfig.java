@@ -43,7 +43,7 @@ public class ProjectProdSecurityConfig {
 
         http.securityContext(securityContext -> securityContext.requireExplicitSave(false))
                 .sessionManagement(sessionManagement -> sessionManagement.sessionCreationPolicy(SessionCreationPolicy.ALWAYS))
-                .cors(corsConfig->corsConfig.configurationSource(new CorsConfigurationSource() {
+                .cors(corsConfig -> corsConfig.configurationSource(new CorsConfigurationSource() {
                     @Override
                     public CorsConfiguration getCorsConfiguration(HttpServletRequest request) {
                         CorsConfiguration corsConfiguration = new CorsConfiguration();
@@ -56,21 +56,24 @@ public class ProjectProdSecurityConfig {
                         return corsConfiguration;
                     }
                 }))
-                .sessionManagement(smc->smc.invalidSessionUrl("/invalidSession")
+                .sessionManagement(smc -> smc.invalidSessionUrl("/invalidSession")
                         .maximumSessions(2).maxSessionsPreventsLogin(true).expiredUrl("/expiredSession"))
                 .requiresChannel(rcc -> rcc.anyRequest().requiresSecure())
-                .csrf(csrfConfig->csrfConfig.csrfTokenRequestHandler(csrfTokenRequestAttributeHandler)
-                        .ignoringRequestMatchers("/contact","/register")
+                .csrf(csrfConfig -> csrfConfig.csrfTokenRequestHandler(csrfTokenRequestAttributeHandler)
+                        .ignoringRequestMatchers("/contact", "/register")
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
                 .addFilterAfter(new CsrfCookieFilter(), BasicAuthenticationFilter.class)
                 .authorizeHttpRequests((requests) -> requests
-                        .requestMatchers("/myAccount", "/myBalance", "/myCards", "/myLoans","/user")
-                        .authenticated()
+                        .requestMatchers("/myAccount").hasAuthority("VIEWACCOUNT")
+                        .requestMatchers("/myBalance").hasAnyAuthority("VIEWBALANCE", "VIEWACCOUNT")
+                        .requestMatchers("/myLoans").hasAnyAuthority("VIEWLOANS")
+                        .requestMatchers("/myCards").hasAnyAuthority("VIEWCARDS")
+                        .requestMatchers("/user").authenticated()
                         .requestMatchers("/notices", "/contact", "/error", "/register", "/invalidSession").permitAll()
                 );
         http.formLogin(withDefaults());
-        http.httpBasic(hbc->hbc.authenticationEntryPoint(new CustomBasicAuthenticationEntryPoint()));
-        http.exceptionHandling(ehc->ehc.accessDeniedHandler(new CustomAccessDeniedHandler()));
+        http.httpBasic(hbc -> hbc.authenticationEntryPoint(new CustomBasicAuthenticationEntryPoint()));
+        http.exceptionHandling(ehc -> ehc.accessDeniedHandler(new CustomAccessDeniedHandler()));
         return http.build();
     }
 
