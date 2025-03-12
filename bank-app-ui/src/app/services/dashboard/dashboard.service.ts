@@ -1,8 +1,8 @@
+import { Contact } from './../../model/contact.model';
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { AppConstants } from "../../constants/app.constants";
 import { environment } from '../../../environments/environment';
-import { Contact } from '../../model/contact.model';
 
 @Injectable({
   providedIn: 'root'
@@ -32,7 +32,9 @@ export class DashboardService {
   }
 
   saveMessage(contact : Contact){
-    return this.http.post(environment.rooturl + AppConstants.CONTACT_API_URL,contact,{ observe: 'response',withCredentials: true});
+    let contacts=[];
+    contacts.push(contact);
+    return this.http.post(environment.rooturl + AppConstants.CONTACT_API_URL,contacts,{ observe: 'response',withCredentials: true});
   }
 
 }
